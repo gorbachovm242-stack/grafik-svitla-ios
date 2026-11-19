@@ -57,11 +57,7 @@ struct AlertActivityLockView: View {
                     .foregroundColor(p.title.color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                Text(AlertLogic.activityLine(state))
-                    .font(.system(size: 13, weight: .medium, design: .default))
-                    .foregroundColor(p.text.color)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
+                placeLines(p)
                 Text(stale ? "Дані застарілі — оновіть" : AlertLogic.activityChecked(state))
                     .font(.system(size: 11, weight: .regular, design: .default))
                     .foregroundColor(stale ? Theme.night().warn.color : p.muted.color)
@@ -87,5 +83,23 @@ struct AlertActivityLockView: View {
             }
         }
         .padding(16)
+    }
+
+    /// Місце й що летить: одним рядком, а якщо не вміщується — двома, без розриву посеред «·».
+    @ViewBuilder func placeLines(_ p: PageTok) -> some View {
+        let place = AlertLogic.compactPlace(state.place)
+        let extra = !state.threat.isEmpty ? state.threat : state.scope
+        let font = Font.system(size: 13, weight: .medium, design: .default)
+        if extra.isEmpty || place.isEmpty {
+            Text(place.isEmpty ? extra : place).font(font).foregroundColor(p.text.color).lineLimit(1).minimumScaleFactor(0.8)
+        } else {
+            ViewThatFits(in: .horizontal) {
+                Text("\(place) · \(extra)").font(font).foregroundColor(p.text.color).lineLimit(1)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(place).font(font).foregroundColor(p.text.color).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(extra).font(font).foregroundColor(p.text.color).lineLimit(1).minimumScaleFactor(0.8)
+                }
+            }
+        }
     }
 }
