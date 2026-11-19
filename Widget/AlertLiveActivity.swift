@@ -42,7 +42,7 @@ struct AlertLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Text(context.isStale ? "Дані можуть бути застарілі" : AlertLogic.activityChecked(state))
+                        Text(context.isStale ? "Дані застарілі — оновіть" : AlertLogic.activityChecked(state))
                             .font(.system(size: 11, weight: .regular, design: .default))
                             .foregroundColor(.white.opacity(0.7))
                         Spacer()
