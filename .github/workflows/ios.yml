@@ -3,6 +3,8 @@
 #
 # test        — щоразу: тести логіки (swift test), збирання застосунку й віджета, тести на симуляторі iPhone,
 #               картинки всіх віджетів (артефакт widget-previews). Підпис і секрети не потрібні.
+# ipa         — після зелених тестів на main: непідписаний .ipa для сайдлоаду (AltStore, SideStore, Sideloadly)
+#               у релізі «Для сайдлоаду» (tag sideload): його можна завантажити без входу на GitHub.
 # testflight  — лише вручну (Actions → iOS → Run workflow → «testflight»): архів, підпис і надсилання в TestFlight.
 #               Потрібні секрети ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID (README, крок 4).
 name: iOS
@@ -96,6 +98,93 @@ jobs:
             build/previews
             build/xcodebuild.log
           if-no-files-found: warn
+
+  ipa:
+    name: IPA для сайдлоаду
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write # реліз «Для сайдлоаду»
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Найновіший Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)
+          if [ -n "$XCODE" ]; then sudo xcode-select -s "$XCODE"; fi
+          xcodebuild -version
+
+      - name: Проєкт із project.yml (XcodeGen)
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Збирання для iPhone без підпису (Release)
+        run: |
+          mkdir -p build
+          set +e
+          xcodebuild build \
+            -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            > build/ipa-build.log 2>&1
+          code=$?
+          set -e
+          grep -E "error:|\*\* BUILD" build/ipa-build.log | tail -50 || true
+          exit $code
+
+      # Інструмент сайдлоаду бере дозволи з підпису застосунку, тож App Group треба вписати: без неї віджет
+      # не бачив би налаштувань. Підписуємо «ad-hoc» (без сертифіката) лише з App Group; справжній підпис
+      # безкоштовним Apple ID робить уже AltStore чи Sideloadly (групу він може перейменувати — застосунок
+      # знайде її сам, див. SvitloCore/AppGroupLookup.swift).
+      - name: Дозволи, підпис ad-hoc і .ipa
+        run: |
+          APP=build/dd/Build/Products/Release-iphoneos/GrafikSvitla.app
+          GROUP=$(xcodebuild -showBuildSettings -project "$PROJECT" -target GrafikSvitla -configuration Release 2>/dev/null \
+            | awk -F ' = ' '/^ *APP_GROUP_ID = /{print $2; exit}')
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist")
+          echo "App Group: $GROUP, версія: $VERSION"
+          test -n "$GROUP"
+          cat > build/entitlements.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.security.application-groups</key>
+            <array><string>${GROUP}</string></array>
+          </dict>
+          </plist>
+          EOF
+          codesign --force --sign - --entitlements build/entitlements.plist "$APP/PlugIns/GrafikWidgets.appex"
+          codesign --force --sign - --entitlements build/entitlements.plist "$APP"
+          codesign -d --entitlements - "$APP/PlugIns/GrafikWidgets.appex" 2>&1 | tail -5
+          rm -rf build/ipa
+          mkdir -p build/ipa/Payload
+          cp -R "$APP" build/ipa/Payload/
+          IPA="GrafikSvitla-${VERSION}-${{ github.run_number }}.ipa"
+          (cd build/ipa && zip -qry "../$IPA" Payload)
+          echo "IPA=build/$IPA" >> "$GITHUB_ENV"
+          ls -la build/*.ipa
+          unzip -l "build/$IPA" | grep -E "Info.plist$|GrafikSvitla$|GrafikWidgets$" | head || true
+
+      - name: Файл .ipa (артефакт)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipa-sideload
+          path: ${{ env.IPA }}
+
+      - name: Реліз «Для сайдлоаду» (остання збірка)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete sideload --yes --cleanup-tag 2>/dev/null || true
+          gh release create sideload "$IPA" --target "$GITHUB_SHA" --prerelease \
+            --title "Для сайдлоаду: остання збірка" \
+            --notes "Непідписаний файл застосунку «Графік світла» для iPhone, щоб поставити без App Store: підпишіть його своїм безкоштовним Apple ID через AltStore, SideStore чи Sideloadly. Так підписаний застосунок працює 7 днів, потім його треба підписати знову (AltStore і SideStore роблять це самі). Збірка з коміту ${GITHUB_SHA::7}, запуск №${{ github.run_number }}."
 
   testflight:
     name: TestFlight

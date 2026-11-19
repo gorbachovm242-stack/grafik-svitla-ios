@@ -12,10 +12,14 @@ enum Widgets {
 }
 
 enum AppGroup {
-    /// Назва групи береться з Info.plist (AppGroupID = $(APP_GROUP_ID) у project.yml), тож міняти її в одному місці.
-    static var id: String {
-        (Bundle.main.object(forInfoDictionaryKey: "AppGroupID") as? String) ?? "group.ua.maiak.grafik"
-    }
+    /// Назва групи з Info.plist (AppGroupID = $(APP_GROUP_ID) у project.yml), тож міняти її в одному місці.
+    /// Після сайдлоаду інструмент перейменовує групу, тож справжню беремо з вбудованого профілю підпису.
+    static let id: String = {
+        let configured = (Bundle.main.object(forInfoDictionaryKey: "AppGroupID") as? String) ?? "group.ua.maiak.grafik"
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let profile = try? Foundation.Data(contentsOf: url) else { return configured }
+        return AppGroupLookup.pick(configured: configured, available: AppGroupLookup.groups(fromProfile: profile))
+    }()
 }
 
 enum Shared {

@@ -34,8 +34,12 @@ struct GrafikApp: App {
 }
 
 enum BackgroundRefresh {
-    /// Має збігатися з BGTaskSchedulerPermittedIdentifiers у project.yml: $(APP_BUNDLE_ID).refresh.
-    static var id: String { (Bundle.main.bundleIdentifier ?? "ua.maiak.grafik") + ".refresh" }
+    /// Береться прямо з BGTaskSchedulerPermittedIdentifiers в Info.plist: після сайдлоаду Bundle ID інший,
+    /// а ідентифікатор, якого немає в цьому списку, iOS не приймає (застосунок упав би на запуску).
+    static var id: String {
+        (Bundle.main.object(forInfoDictionaryKey: "BGTaskSchedulerPermittedIdentifiers") as? [String])?.first
+            ?? ((Bundle.main.bundleIdentifier ?? "ua.maiak.grafik") + ".refresh")
+    }
 
     /// Попросити iOS про наступне фонове оновлення не раніше ніж за 30 хвилин.
     static func schedule() {
