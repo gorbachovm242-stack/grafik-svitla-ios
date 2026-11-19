@@ -181,10 +181,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          # Сторінка релізу — інструкція для друзів (SIDELOAD.md) і номер збірки внизу.
+          cp SIDELOAD.md build/notes.md
+          printf '\n---\nЗбірка з коміту %s, запуск №%s.\n' "${GITHUB_SHA::7}" "${{ github.run_number }}" >> build/notes.md
           gh release delete sideload --yes --cleanup-tag 2>/dev/null || true
           gh release create sideload "$IPA" --target "$GITHUB_SHA" --prerelease \
-            --title "Для сайдлоаду: остання збірка" \
-            --notes "Непідписаний файл застосунку «Графік світла» для iPhone, щоб поставити без App Store: підпишіть його своїм безкоштовним Apple ID через AltStore, SideStore чи Sideloadly. Так підписаний застосунок працює 7 днів, потім його треба підписати знову (AltStore і SideStore роблять це самі). Збірка з коміту ${GITHUB_SHA::7}, запуск №${{ github.run_number }}."
+            --title "Графік світла для iPhone: тестова версія без App Store" \
+            --notes-file build/notes.md
 
   testflight:
     name: TestFlight
