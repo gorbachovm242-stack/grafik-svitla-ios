@@ -104,9 +104,10 @@ struct TimerText: View {
 
     var body: some View {
         let end = max(Logic.changeDate(c.view, c.now, c.date), c.date)
-        // Зупинку на самому початку проміжку iOS не враховує (таймер іде за справжнім годинником), тож для
-        // картинок-зразків проміжок починаємо на секунду раніше.
-        let start = c.m.frozen ? c.date.addingTimeInterval(-1) : c.date
+        // Картинки-зразки (frozen): зупинений таймер iOS показує «зупинка − початок» (перевірено на симуляторі),
+        // тож початок ставимо на залишок раніше: тоді на картинці саме залишок до зміни, як на живому віджеті.
+        let left = max(end.timeIntervalSince(c.date), 1)
+        let start = c.m.frozen ? c.date.addingTimeInterval(-left) : c.date
         let text = Text(timerInterval: start...end, pauseTime: c.m.pauseAt, countsDown: true)
             .font(.system(size: size, weight: weight, design: .monospaced))
             .monospacedDigit()
