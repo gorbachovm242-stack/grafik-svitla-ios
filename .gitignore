@@ -1,0 +1,16 @@
+# Створює XcodeGen з project.yml
+GrafikSvitla.xcodeproj/
+App/Info.plist
+Widget/Info.plist
+App/GrafikSvitla.entitlements
+Widget/GrafikWidgets.entitlements
+# Збирання
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcresult
+# Ключі не зберігати ніколи
+*.p8
+*.mobileprovision
+*.p12
