@@ -17,6 +17,17 @@ struct WidgetModel {
     var pages: [String]
     var page: String
     var pageKey: String
+    /// Таймери стоять на моменті date (картинки віджетів у тестах), а не йдуть за справжнім годинником.
+    var frozen = false
+
+    /// Для таймерів: на якому моменті зупинитися (nil — живий таймер).
+    var pauseAt: Date? { frozen ? date : nil }
+}
+
+/// Таймер, що рахує вгору від from: живий або зупинений на pauseAt.
+func countUp(_ from: Date, pauseAt: Date?) -> Text {
+    guard let pause = pauseAt else { return Text(from, style: .timer) }
+    return Text(timerInterval: from...max(from, pause), pauseTime: pause, countsDown: false)
 }
 
 /// Усе, що потрібно розкладкам: модель, кольори й ширина сторінки без стовпчика.
@@ -93,7 +104,7 @@ struct TimerText: View {
 
     var body: some View {
         let end = max(Logic.changeDate(c.view, c.now, c.date), c.date)
-        let text = Text(timerInterval: c.date...end, countsDown: true)
+        let text = Text(timerInterval: c.date...end, pauseTime: c.m.pauseAt, countsDown: true)
             .font(.system(size: size, weight: weight, design: .monospaced))
             .monospacedDigit()
         Group {
@@ -111,9 +122,10 @@ struct AlertTimer: View {
     let s: AlertStatus
     let size: CGFloat
     let color: RGBA
+    var pauseAt: Date? = nil
 
     var body: some View {
-        Text(Date(ms: s.since), style: .timer)
+        countUp(Date(ms: s.since), pauseAt: pauseAt)
             .font(.system(size: size, weight: .bold, design: .monospaced))
             .monospacedDigit()
             .foregroundColor(color.color)
@@ -225,9 +237,9 @@ struct FactLine: View {
                 if withTimer, let from = fact.timerFrom {
                     Group {
                         if let color = color {
-                            Text(Date(ms: from), style: .timer).foregroundColor(color.color)
+                            countUp(Date(ms: from), pauseAt: c.m.pauseAt).foregroundColor(color.color)
                         } else {
-                            Text(Date(ms: from), style: .timer)
+                            countUp(Date(ms: from), pauseAt: c.m.pauseAt)
                         }
                     }
                     .font(.system(size: size, weight: .medium, design: .monospaced))
@@ -1056,7 +1068,7 @@ struct AlertSquare: View {
             }
             Spacer(minLength: 2)
             if s.timer {
-                AlertTimer(s: s, size: 15, color: p.title)
+                AlertTimer(s: s, size: 15, color: p.title, pauseAt: c.m.pauseAt)
             } else if let foot = foot {
                 WLabel(text: foot, size: 10, color: s.stale ? c.t.warn : p.muted)
             }
@@ -1095,7 +1107,7 @@ struct AlertWide: View {
             }
             Spacer(minLength: 2)
             HStack(spacing: 6) {
-                if s.timer { AlertTimer(s: s, size: 16, color: p.title) }
+                if s.timer { AlertTimer(s: s, size: 16, color: p.title, pauseAt: c.m.pauseAt) }
                 Spacer(minLength: 0)
                 WLabel(text: foot, size: 10, color: s.stale ? c.t.warn : p.muted, scale: 0.8)
                 RefreshButton(color: p.muted)

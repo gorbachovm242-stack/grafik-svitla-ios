@@ -89,17 +89,19 @@ Mac не потрібен: збирає й підписує машина macOS �
 
 ### 5. Репозиторій на GitHub
 
-Вміст теки `ios/` стає коренем окремого репозиторію (наприклад, `grafik-svitla-ios`). Це не той публічний
-`grafik-svitla`, з якого друзі ставлять скрипт.
-- **Публічний**: хвилини macOS на GitHub Actions безкоштовні.
-- **Приватний**: хвилини macOS дорожчі за звичайні й швидко вичерпують безкоштовний ліміт місяця. Одна збірка з тестами займає приблизно 10–20 хвилин.
+Уже є: публічний [grafik-svitla-ios](https://github.com/gorbachovm242-stack/grafik-svitla-ios) (хвилини macOS
+у публічному репозиторії безкоштовні). Його корінь — вміст теки `ios/`; це не той `grafik-svitla`, з якого
+друзі ставлять скрипт. Публікація, як і для скрипта, з копії `github-ios/` (свій `.git`, автор — noreply-адреса):
+```powershell
+python tools/publish_ios.py "Що змінилося"
+```
+Секрети з кроку 4 додаються в цьому репозиторії: Settings → Secrets and variables → Actions.
 
-Створити репозиторій і викласти код можу я, коли скажете, як із `grafik-svitla` (через `gh`, автор — noreply-адреса).
+### 6. Збірка й TestFlight
 
-### 6. Перша збірка й TestFlight
-
-1. Після push відкрийте Actions → **iOS**. Перший запуск, найімовірніше, покаже помилки компіляції в коді застосунку: його ще не збирав жоден Xcode. Журнал лежить у артефакті `widget-previews` (`xcodebuild.log`), виправляю за ним.
-2. Коли тести зелені: Actions → iOS → Run workflow → позначте **testflight** → Run. Збірка підпишеться й піде в App Store Connect. Номер збірки — номер запуску workflow, версія — `MARKETING_VERSION` у `project.yml`.
+1. Кожен push запускає Actions → **iOS** (близько 7 хвилин). Картинки всіх віджетів і журнал збирання —
+   в артефакті `widget-previews` унизу сторінки запуску.
+2. Для TestFlight: Actions → iOS → Run workflow → позначте **testflight** → Run. Збірка підпишеться й піде в App Store Connect. Номер збірки — номер запуску workflow, версія — `MARKETING_VERSION` у `project.yml`.
 3. Через 5–30 хвилин збірка з'явиться в App Store Connect → TestFlight. Питання про шифрування не буде: у застосунку вже вказано «лише HTTPS» (`ITSAppUsesNonExemptEncryption = false`).
 4. **Ви самі**: TestFlight → Internal Testing → «+» → додайте себе. На iPhone поставте застосунок **TestFlight** з App Store і прийміть запрошення.
 5. **Друзі**: External Testing → нова група → додайте збірку → Apple проводить коротку бета-перевірку (зазвичай до доби). Потім вмикається публічне посилання-запрошення.

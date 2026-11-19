@@ -48,7 +48,7 @@ enum PreviewSamples {
         let now = Logic.kyivParts(date)
         return WidgetModel(
             glance: Logic.buildGlance(cfg, data, now, nowMs: date.ms), now: now, date: date, family: family, size: size,
-            alert: alert, pages: AlertLogic.pagesOf(alert != nil), page: page, pageKey: ""
+            alert: alert, pages: AlertLogic.pagesOf(alert != nil), page: page, pageKey: "", frozen: true
         )
     }
 

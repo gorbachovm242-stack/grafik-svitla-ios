@@ -18,7 +18,7 @@ struct GrafikApp: App {
             RootView()
                 .environmentObject(model)
         }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .background { BackgroundRefresh.schedule() }
         }
         // Фонове оновлення: iOS сама вирішує коли (зазвичай кілька разів на день). Так «графік змінився»
@@ -64,7 +64,7 @@ struct RootView: View {
         .tint(Palette.brand)
         .task { await model.start() }
         .onReceive(minute) { model.now = $0 }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 model.now = Date()
                 Task { await model.refresh(model.cfg, force: false) }

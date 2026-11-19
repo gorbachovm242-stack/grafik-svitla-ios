@@ -236,7 +236,7 @@ struct LightTab: View {
                       prompt: Text(cfg.svitlobot != nil ? "Інший датчик: вулиця чи посилання" : "Вулиця, будинок або посилання на канал"))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .onChange(of: model.query) { _ in model.searchIfNeeded() }
+                .onChange(of: model.query) { model.searchIfNeeded() }
             if !model.directNew.isEmpty {
                 Button("Підключити канал \(model.directNew)") {
                     let id = model.directNew
