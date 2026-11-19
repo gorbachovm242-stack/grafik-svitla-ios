@@ -1,5 +1,5 @@
-// Розширення з віджетами «Графіка світла»: робочий екран (малий, середній, великий) і екран блокування.
-// Live Activity для тривоги — наступним кроком (ActivityKit), тут поки лише віджет.
+// Розширення з віджетами «Графіка світла»: робочий екран (малий, середній, великий), екран блокування
+// і Live Activity тривоги (екран блокування й Dynamic Island).
 import WidgetKit
 import SwiftUI
 
@@ -7,6 +7,7 @@ import SwiftUI
 struct GrafikWidgets: WidgetBundle {
     var body: some Widget {
         LightWidget()
+        AlertLiveActivity()
     }
 }
 

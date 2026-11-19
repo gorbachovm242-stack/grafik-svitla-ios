@@ -137,6 +137,8 @@ final class AppModel: ObservableObject {
         alertLoading = true
         alertBundle = await store.freshAlerts(next, force: force, budgetMs: Timing.appBudgetMs, requestMs: Timing.timeoutSeconds * 1000)
         alertLoading = false
+        // Застосунок відкрито: саме зараз iOS дозволяє почати Live Activity, якщо тривога.
+        await LiveAlerts.sync(alertBundle, settings: next)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -144,7 +146,16 @@ final class AppModel: ObservableObject {
         store.writeAlerts(next)
         alertSet = next
         alertBundle = store.cachedAlerts(next)
+        let bundle = alertBundle
+        Task { await LiveAlerts.sync(bundle, settings: next) }
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Вимикач Live Activity під час тривоги (типово ввімкнено).
+    func setLiveActivity(_ on: Bool) {
+        var next = alertSet
+        next.liveActivity = on
+        saveAlerts(next)
     }
 
     // MARK: Черга

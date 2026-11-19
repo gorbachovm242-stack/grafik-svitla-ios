@@ -107,13 +107,16 @@ public struct AlertSettings: Codable, Equatable, Sendable {
     public var place: Place?
     public var channel: String? // назва публічного каналу Telegram
     public var channelTitle: String?
-    public init(enabled: Bool? = nil, place: Place? = nil, channel: String? = nil, channelTitle: String? = nil) {
+    public var liveActivity: Bool? // Live Activity під час тривоги; не задано — увімкнено
+    public init(enabled: Bool? = nil, place: Place? = nil, channel: String? = nil, channelTitle: String? = nil, liveActivity: Bool? = nil) {
         self.enabled = enabled
         self.place = place
         self.channel = channel
         self.channelTitle = channelTitle
+        self.liveActivity = liveActivity
     }
     public var isOn: Bool { enabled == true }
+    public var activityOn: Bool { liveActivity != false }
 }
 
 public enum AlertKind: String, Codable, Sendable { case alert, threat, nearby, quiet, nodata, setup }
@@ -132,6 +135,8 @@ public struct AlertStatus: Codable, Equatable, Sendable {
     public var checked: String? // коли alerts.in.ua востаннє підтвердив стан: «10:42» або «13.11, 10:42»
     public var posts: [String] = [] // свіжі дописи каналу моніторингу: «16:45 · 2 шахеди на місто»
     public var channel: String? // назва каналу моніторингу
+    public var threat: String? // що летить: «БпЛА, балістика» (для Live Activity)
+    public var fetchedAt: Millis = 0 // коли alerts.in.ua востаннє підтвердив стан
     public init() {}
 }
 
@@ -364,6 +369,7 @@ extension AlertLogic {
         let age = nowMs - feed.fetchedAt
         let checked = checkedText(feed.fetchedAt, nowMs)
         s.checked = checked
+        s.fetchedAt = feed.fetchedAt
         s.stale = feed.stale || age > AlertConfig.staleMinutes * 60000
         if age > AlertConfig.oldMinutes * 60000 {
             s.kind = .nodata
@@ -402,6 +408,7 @@ extension AlertLogic {
             s.since = since == .infinity ? 0 : since
             s.timer = s.since > 0 && nowMs - s.since >= 0 && nowMs - s.since < AlertConfig.timerHours * 3_600_000
             let threat = threatText(threats)
+            s.threat = threat
             let short = alertSince(s.since, nowMs)
             s.subShort = short
             s.sub = short + (threat.map { " · \($0)" } ?? "")

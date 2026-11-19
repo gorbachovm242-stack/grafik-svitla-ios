@@ -51,6 +51,7 @@ targets:
           - UIInterfaceOrientationPortrait
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        NSSupportsLiveActivities: true # Live Activity під час тривоги
         UIBackgroundModes:
           - fetch # фонове оновлення графіка й сповіщень (BGAppRefreshTask)
         BGTaskSchedulerPermittedIdentifiers:
@@ -99,6 +100,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).widgets
         PRODUCT_NAME: GrafikWidgets
         SKIP_INSTALL: YES
+        # Спільний код знає, що він у розширенні: Live Activity звідси не починають і не міняють.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) WIDGET_EXTENSION
   # Тести на симуляторі: малюють усі розміри й вигляди віджета в PNG (артефакт workflow), щоб побачити їх без Mac.
   # Логіку перевіряють тести пакета SvitloCore (swift test).
   GrafikSvitlaTests:

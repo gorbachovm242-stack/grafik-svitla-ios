@@ -25,7 +25,9 @@ struct GrafikApp: App {
         // приходить і тоді, коли віджета на екрані немає.
         .backgroundTask(.appRefresh(BackgroundRefresh.id)) {
             BackgroundRefresh.schedule()
-            await Updater.refreshAll(force: false, budgetMs: 20000)
+            let result = await Updater.refreshAll(force: false, budgetMs: 20000)
+            // З фону Live Activity не почати, але оновити чи прибрати після відбою можна.
+            await LiveAlerts.sync(result.alerts, settings: Shared.store.readAlerts())
             await Widgets.reload()
         }
     }
@@ -68,6 +70,7 @@ struct RootView: View {
             if phase == .active {
                 model.now = Date()
                 Task { await model.refresh(model.cfg, force: false) }
+                Task { await model.refreshAlerts(model.alertSet, force: false) }
             }
         }
         // Дотик до віджета відкриває його сторінку: grafiksvitla://light або grafiksvitla://alert.

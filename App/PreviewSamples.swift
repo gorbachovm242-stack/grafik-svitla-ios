@@ -82,6 +82,29 @@ enum PreviewSamples {
             add("lock-rectangular-\(look)", model(cfg, data, .accessoryRectangular, rectangular))
             add("lock-circular-\(look)", model(cfg, data, .accessoryCircular, circular))
         }
+        // Live Activity на екрані блокування: тривога, попередня загроза, застарілі дані.
+        let activity = CGSize(width: 360, height: 104)
+        let samples: [(String, AlertStatus, Bool)] = [
+            ("live-activity-alert", alert(date), false),
+            ("live-activity-threat", threat(date), false),
+            ("live-activity-stale", alert(date), true),
+        ]
+        for (name, status, stale) in samples {
+            guard let state = AlertLogic.activityState(status) else { continue }
+            let view = AlertActivityLockView(state: state, stale: stale, pauseAt: date)
+                .frame(width: activity.width, height: activity.height)
+                .background(AlertActivityLook.page(state).bg0.color)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            out.append(Sample(name: name, size: activity, view: AnyView(view)))
+        }
         return out
+    }
+
+    /// Попередня загроза (жовтий рівень) у Запорізькій області з 10:01.
+    static func threat(_ date: Date) -> AlertStatus {
+        let feed = AlertFeed(ok: true, stale: false, fetchedAt: date.ms, alerts: [
+            AirAlert(uid: "12", title: "Запорізька область", kind: "oblast", oblast: "12", level: "yellow", since: date.ms - 8 * 60000),
+        ])
+        return AlertLogic.alertStatus(Place(oblast: "12", oblastTitle: "Запорізька область"), feed, date.ms)
     }
 }
